@@ -3,129 +3,164 @@
 ## 技术栈
 - 前端：React + TypeScript + Vite
 - 样式：Tailwind CSS
-- 存储：LoaclStroage
-- 天气查询API：OpenWeatherMap API
+- 存储：LocalStorage
+- 天气 API：OpenWeatherMap API
 
 ## 项目结构
 ```txt
 weather-app/
 ├─ public/
-│  └─ favicon.svg
 ├─ src/
 │  ├─ api/
-│  │  ├─ weather.ts            # OpenWeatherMap API 请求封装
-│  │  └─ geolocation.ts        # 浏览器定位 + 经纬度转天气查询参数
+│  │  ├─ weather.ts                # 天气/空气质量/预警/历史趋势接口封装
+│  │  ├─ weatherApi.ts             # 通用天气 API 工具（保留）
+│  │  └─ geolocation.ts            # 浏览器定位封装
 │  ├─ components/
-│  │  ├─ SearchBar.tsx         # 城市搜索输入与触发查询
-│  │  ├─ CurrentWeatherCard.tsx# 当天天气卡片（温度/湿度/风速等）
-│  │  ├─ ForecastList.tsx      # 未来10天天气列表
-│  │  ├─ FavoriteCities.tsx    # 收藏城市列表
-│  │  ├─ LoadingState.tsx      # 加载态
-│  │  └─ ErrorState.tsx        # 错误提示
+│  │  ├─ SearchBar.tsx
+│  │  ├─ CurrentWeatherCard.tsx
+│  │  ├─ WeatherDetailsPanel.tsx
+│  │  ├─ ForecastList.tsx
+│  │  ├─ AirQualityCard.tsx
+│  │  ├─ WeatherAlertsPanel.tsx
+│  │  ├─ HistoryTrendCard.tsx
+│  │  ├─ CityComparePanel.tsx
+│  │  ├─ FavoriteCities.tsx
+│  │  ├─ WeatherScene.tsx
+│  │  ├─ LoadingState.tsx
+│  │  └─ ErrorState.tsx
 │  ├─ hooks/
-│  │  ├─ useWeather.ts         # 查询天气与状态管理
-│  │  └─ useFavorites.ts       # 收藏城市的增删改查（LocalStorage）
-│  ├─ store/
-│  │  └─ weatherStore.ts       # 可选：集中管理查询状态（如后续复杂化）
+│  │  ├─ useWeather.ts
+│  │  └─ useFavorites.ts
 │  ├─ types/
-│  │  ├─ weather.ts            # 领域模型与 API DTO 类型
-│  │  └─ common.ts             # 通用类型（加载状态、错误类型）
+│  │  ├─ weather.ts
+│  │  └─ common.ts
 │  ├─ utils/
-│  │  ├─ format.ts             # 温度、日期、风速等格式化
-│  │  ├─ storage.ts            # LocalStorage 读写工具
-│  │  └─ mapper.ts             # API 响应 -> 前端领域模型映射
+│  │  ├─ format.ts
+│  │  ├─ storage.ts
+│  │  └─ mapper.ts
 │  ├─ App.tsx
 │  ├─ main.tsx
 │  └─ index.css
-├─ .env.local                  # VITE_OPENWEATHER_API_KEY=xxx（不提交）
+├─ .env.local
 ├─ .env.example
-├─ package.json
+├─ README.md
 └─ TECH_DESIGN.md
 ```
 
+## 数据模型（核心）
 
-## 数据模型
-1. 查询参数与通用状态
+### 查询与状态
 ```ts
-type TemperatureUnit = "metric"; // MVP 固定摄氏度
+type RequestStatus = 'idle' | 'loading' | 'success' | 'error'
 
 interface WeatherQuery {
-  city?: string;        // 城市名查询
-  lat?: number;         // 定位查询
-  lon?: number;
-  unit: TemperatureUnit;
+  city?: string
+  lat?: number
+  lon?: number
+  unit: 'metric'
 }
-
-type RequestStatus = "idle" | "loading" | "success" | "error";
 ```
 
-2. 当前天气（页面主卡片）
+### 当前天气
 ```ts
 interface CurrentWeather {
-  cityName: string;
-  countryCode: string;
-  timezoneOffset: number;
-  timestamp: number;
-  weatherMain: string;        // 如 Clear / Rain
-  weatherDescription: string; // 如 clear sky
-  icon: string;
-  temp: number;
-  tempMin: number;
-  tempMax: number;
-  humidity: number;
-  windSpeed: number;
+  cityName: string
+  countryCode: string
+  lat: number
+  lon: number
+  timezoneOffset: number
+  timestamp: number
+  sunrise: number
+  sunset: number
+  weatherMain: string
+  weatherDescription: string
+  icon: string
+  temp: number
+  feelsLike: number
+  dewPoint: number
+  tempMin: number
+  tempMax: number
+  humidity: number
+  visibility: number
+  windSpeed: number
+  uvIndex: number | null
 }
 ```
 
-3. 十天预报（列表展示）
+### 预报与扩展模块
 ```ts
 interface DailyForecast {
-  date: string;    // YYYY-MM-DD（本地格式化前）
-  weatherMain: string;
-  weatherDescription: string;
-  icon: string;
-  tempMin: number;
-  tempMax: number;
+  date: string
+  weatherMain: string
+  weatherDescription: string
+  icon: string
+  tempMin: number
+  tempMax: number
+}
+
+interface AirQuality {
+  aqi: number
+  level: string
+  suggestion: string
+  pm2_5: number
+  pm10: number
+  o3: number
+}
+
+interface WeatherAlert {
+  senderName: string
+  event: string
+  start: number
+  end: number
+  description: string
+  severity: 'low' | 'medium' | 'high'
+}
+
+interface HistoricalTrendPoint {
+  date: string
+  temp: number
 }
 ```
 
-4. 收藏城市（LocalStorage 持久化）
+### 收藏城市
 ```ts
 interface FavoriteCity {
-  id: string;          // `${cityName}-${countryCode}` 或 uuid
-  cityName: string;
-  countryCode: string;
-  lat?: number;
-  lon?: number;
-  addedAt: number;     // 时间戳
+  id: string
+  cityName: string
+  countryCode: string
+  lat?: number
+  lon?: number
+  addedAt: number
 }
-
-type FavoriteCityList = FavoriteCity[];
 ```
 
-5. 页面聚合状态（建议）
+### 聚合视图状态
 ```ts
 interface WeatherViewState {
-  status: RequestStatus;
-  query: WeatherQuery;
-  current: CurrentWeather | null;
-  forecast: DailyForecast[];
-  favorites: FavoriteCityList;
-  errorMessage: string | null;
+  status: RequestStatus
+  query: WeatherQuery
+  current: CurrentWeather | null
+  forecast: DailyForecast[]
+  airQuality: AirQuality | null
+  alerts: WeatherAlert[]
+  history: HistoricalTrendPoint[]
+  favorites: FavoriteCity[]
+  errorMessage: string | null
 }
 ```
 
-6. LocalStorage Key 约定
+## LocalStorage Key
 ```ts
 const STORAGE_KEYS = {
-  FAVORITE_CITIES: "weather_app_favorite_cities",
-  LAST_QUERY_CITY: "weather_app_last_query_city"
-} as const;
+  FAVORITE_CITIES: 'weather_app_favorite_cities',
+  LAST_QUERY_CITY: 'weather_app_last_query_city',
+} as const
 ```
 
-
-## 关键技术点
-1. 处理好API调用，做好可能的错误处理，给出友好的提示
-2. 请求过程中显示加载动画
-3. 保证API key的安全，使用环境变量。把 API Key 放进.env.local文件，代码中通过环境变量读取
-4. 规划好界面设计，提供的信息可能会有点多，不要使界面显得太杂乱
+## 关键实现说明
+1. 城市查询与定位查询共用同一套天气聚合流程。
+2. 城市名优先中文显示（地理编码 `local_names` + 反向地理编码补充）。
+3. 页面采用信息分区布局：核心天气、详情、预报、AQI、预警、历史趋势、多城市对比。
+4. 动态背景主题根据天气类型切换，并在雨天显示雨滴动画。
+5. 对 OpenWeather 3.0 能力（UV/官方预警/历史）做降级处理，保证主流程稳定。
+6. 收藏城市持久化到 LocalStorage，支持快捷查询与二次确认删除。
