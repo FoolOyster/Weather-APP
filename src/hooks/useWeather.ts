@@ -1,13 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
 import { fetchWeatherByCity, fetchWeatherByCoordinates } from '../api/weather'
-import type { CurrentWeather, DailyForecast } from '../types/weather'
+import type {
+  AirQuality,
+  CurrentWeather,
+  DailyForecast,
+  HistoricalTrendPoint,
+  WeatherAlert,
+} from '../types/weather'
 import type { RequestStatus } from '../types/common'
-import { STORAGE_KEYS, writeStorage, readStorage } from '../utils/storage'
+import { readStorage, STORAGE_KEYS, writeStorage } from '../utils/storage'
 
 interface UseWeatherState {
   status: RequestStatus
   current: CurrentWeather | null
   forecast: DailyForecast[]
+  airQuality: AirQuality | null
+  alerts: WeatherAlert[]
+  history: HistoricalTrendPoint[]
   errorMessage: string | null
 }
 
@@ -18,6 +27,9 @@ export const useWeather = () => {
     status: 'idle',
     current: null,
     forecast: [],
+    airQuality: null,
+    alerts: [],
+    history: [],
     errorMessage: null,
   })
 
@@ -30,6 +42,9 @@ export const useWeather = () => {
         status: 'success',
         current: weather.current,
         forecast: weather.forecast,
+        airQuality: weather.airQuality,
+        alerts: weather.alerts,
+        history: weather.history,
         errorMessage: null,
       })
       writeStorage(STORAGE_KEYS.LAST_QUERY_CITY, city)
@@ -51,6 +66,9 @@ export const useWeather = () => {
         status: 'success',
         current: weather.current,
         forecast: weather.forecast,
+        airQuality: weather.airQuality,
+        alerts: weather.alerts,
+        history: weather.history,
         errorMessage: null,
       })
     } catch (error) {
@@ -59,6 +77,15 @@ export const useWeather = () => {
         status: 'error',
         errorMessage: error instanceof Error ? error.message : '定位天气查询失败，请稍后重试',
       }))
+    }
+  }, [])
+
+  const fetchComparisonCity = useCallback(async (city: string): Promise<CurrentWeather | null> => {
+    try {
+      const weather = await fetchWeatherByCity(city)
+      return weather.current
+    } catch {
+      return null
     }
   }, [])
 
@@ -71,5 +98,6 @@ export const useWeather = () => {
     ...state,
     fetchByCity,
     fetchByLocation,
+    fetchComparisonCity,
   }
 }
