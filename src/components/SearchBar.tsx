@@ -32,13 +32,13 @@ export const SearchBar = ({ onSearch, onLocate, isLoading }: SearchBarProps) => 
         value={city}
         onChange={(event) => setCity(event.target.value)}
         placeholder="输入城市名，例如：Shanghai"
-        className="h-11 flex-1 rounded-xl border border-sky-200 px-4 text-slate-800 outline-none transition-colors duration-200 placeholder:text-slate-400 focus:border-blue-500"
+        className="h-12 flex-1 rounded-xl border border-sky-200 px-4 text-slate-800 outline-none transition-colors duration-200 placeholder:text-slate-400 focus:border-blue-500 sm:h-11"
       />
       <div className="flex gap-2">
         <button
           type="submit"
           disabled={isLoading}
-          className="h-11 flex-1 cursor-pointer rounded-xl bg-blue-600 px-5 text-sm font-medium text-white transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
+          className="h-12 flex-1 cursor-pointer rounded-xl bg-blue-600 px-5 text-sm font-medium text-white transition-colors duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300 sm:h-11"
         >
           查询天气
         </button>
@@ -46,7 +46,7 @@ export const SearchBar = ({ onSearch, onLocate, isLoading }: SearchBarProps) => 
           type="button"
           onClick={onLocate}
           disabled={isLoading}
-          className="h-11 cursor-pointer rounded-xl border border-sky-200 bg-white px-4 text-sm font-medium text-sky-700 transition-colors duration-200 hover:bg-sky-50 disabled:cursor-not-allowed"
+          className="h-12 cursor-pointer rounded-xl border border-sky-200 bg-white px-4 text-sm font-medium text-sky-700 transition-colors duration-200 hover:bg-sky-50 disabled:cursor-not-allowed sm:h-11"
         >
           使用定位
         </button>
