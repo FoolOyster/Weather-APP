@@ -68,7 +68,10 @@ function App() {
 
   return (
     <div className="relative min-h-screen overflow-hidden text-slate-800">
-      <WeatherScene weatherMain={current?.weatherMain ?? 'Clear'} />
+      <WeatherScene
+        weatherMain={current?.weatherMain ?? 'Clear'}
+        weatherDescription={current?.weatherDescription}
+      />
 
       <main className="relative mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-6 sm:px-6 lg:px-8">
         <header className="animate-fade-in-up rounded-3xl border border-white/50 bg-white/70 p-5 shadow-sm backdrop-blur-sm">

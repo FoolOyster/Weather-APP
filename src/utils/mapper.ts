@@ -35,6 +35,14 @@ const calculateDewPoint = (temp: number, humidity: number): number => {
   return (243.12 * alpha) / (17.62 - alpha)
 }
 
+// 修正当前天气图标：晴天优先使用白天图标，避免出现黑色球体观感
+const normalizeCurrentIcon = (main: string, icon: string): string => {
+  if (main === 'Clear') {
+    return '01d'
+  }
+  return icon
+}
+
 // 将 OpenWeather 当前天气 DTO 映射到页面领域模型
 export const mapCurrentWeather = (
   dto: OpenWeatherCurrentResponse,
@@ -51,7 +59,7 @@ export const mapCurrentWeather = (
   sunset: dto.sys.sunset,
   weatherMain: dto.weather[0]?.main ?? 'Unknown',
   weatherDescription: dto.weather[0]?.description ?? '未知天气',
-  icon: dto.weather[0]?.icon ?? '01d',
+  icon: normalizeCurrentIcon(dto.weather[0]?.main ?? 'Unknown', dto.weather[0]?.icon ?? '01d'),
   temp: dto.main.temp,
   feelsLike: dto.main.feels_like,
   dewPoint: calculateDewPoint(dto.main.temp, dto.main.humidity),
