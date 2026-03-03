@@ -22,8 +22,11 @@ export type OpenWeatherForecastResponse = {
 }
 
 // 将 OpenWeather 当前天气 DTO 映射到页面领域模型
-export const mapCurrentWeather = (dto: OpenWeatherCurrentResponse): CurrentWeather => ({
-  cityName: dto.name,
+export const mapCurrentWeather = (
+  dto: OpenWeatherCurrentResponse,
+  cityNameOverride?: string,
+): CurrentWeather => ({
+  cityName: cityNameOverride?.trim() || dto.name,
   countryCode: dto.sys.country,
   timezoneOffset: dto.timezone,
   timestamp: dto.dt,
