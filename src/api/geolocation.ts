@@ -18,8 +18,18 @@ export const getBrowserLocation = (): Promise<GeoLocationResult> =>
           lon: position.coords.longitude,
         })
       },
-      () => {
-        reject(new Error('定位失败，请检查浏览器权限设置'))
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          reject(new Error('你已拒绝定位权限，请在浏览器设置中允许定位后重试'))
+          return
+        }
+
+        if (error.code === error.TIMEOUT) {
+          reject(new Error('定位超时，请检查网络或稍后重试'))
+          return
+        }
+
+        reject(new Error('定位失败，当前无法获取你的位置信息'))
       },
       {
         timeout: 8000,

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { getBrowserLocation } from './api/geolocation'
 import { CurrentWeatherCard } from './components/CurrentWeatherCard'
 import { ErrorState } from './components/ErrorState'
@@ -13,6 +13,7 @@ import { getForecastSummary } from './utils/format'
 function App() {
   const { status, current, forecast, errorMessage, fetchByCity, fetchByLocation } = useWeather()
   const { favorites, addFavorite, removeFavorite, isFavorite } = useFavorites()
+  const [locationTip, setLocationTip] = useState<string | null>(null)
 
   const currentId = useMemo(() => {
     if (!current) {
@@ -27,11 +28,25 @@ function App() {
     try {
       const location = await getBrowserLocation()
       await fetchByLocation(location.lat, location.lon)
+      setLocationTip(null)
     } catch (error) {
-      // 定位失败时不覆盖已查询天气，仅通过浏览器提示反馈
-      alert(error instanceof Error ? error.message : '定位失败')
+      setLocationTip(error instanceof Error ? error.message : '定位失败，请稍后重试')
     }
   }
+
+  useEffect(() => {
+    const autoLocate = async () => {
+      try {
+        const location = await getBrowserLocation()
+        await fetchByLocation(location.lat, location.lon)
+        setLocationTip(null)
+      } catch (error) {
+        setLocationTip(error instanceof Error ? error.message : '自动定位失败，请手动输入城市查询')
+      }
+    }
+
+    void autoLocate()
+  }, [fetchByLocation])
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-sky-50 text-slate-800">
@@ -40,9 +55,9 @@ function App() {
 
       <main className="relative mx-auto flex w-full max-w-6xl flex-col gap-5 px-4 py-8 sm:px-6 lg:px-8">
         <header className="animate-fade-in-up space-y-2">
-          <p className="text-sm font-medium text-sky-700">Weather App</p>
+          <p className="text-sm font-medium text-sky-700">天气查询应用</p>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl">
-            明亮简约天气查询
+            天气查询应用
           </h1>
           <p className="max-w-2xl text-sm text-slate-600 sm:text-base">
             输入城市或使用定位，快速查看当前天气与未来预报，并支持收藏常用城市。
@@ -60,6 +75,12 @@ function App() {
           onLocate={handleLocate}
           isLoading={status === 'loading'}
         />
+
+        {locationTip ? (
+          <div className="animate-fade-in-up rounded-2xl border border-amber-100 bg-amber-50 p-4 text-sm text-amber-700">
+            {locationTip}
+          </div>
+        ) : null}
 
         {status === 'loading' ? <LoadingState /> : null}
         {status === 'error' && errorMessage ? <ErrorState message={errorMessage} /> : null}
